@@ -52,27 +52,23 @@ def linear_regression_forecast(series, window_size, forecast_steps):
 
     return forecast
 
-# Пример использования:
-time_series = [100, 102, 105, 107, 105, 108, 110, 108, 110, 115]
-window_size = 3
-forecast_steps = 5
+def test_lr(time_series, window_size, forecast_steps):
+    # Прогнозирование
+    forecast = linear_regression_forecast(time_series, window_size, forecast_steps)
+    print(f"Прогнозируемые значения: {forecast}")
 
-# Прогнозирование
-forecast = linear_regression_forecast(time_series, window_size, forecast_steps)
-print(f"Прогнозируемые значения: {forecast}")
+    # Построение графика
+    plt.figure(figsize=(10, 6))
 
-# Построение графика
-plt.figure(figsize=(10, 6))
+    # Оригинальный временной ряд
+    plt.plot(range(len(time_series)), time_series, label='Оригинальный ряд', color='blue', marker='o')
 
-# Оригинальный временной ряд
-plt.plot(range(len(time_series)), time_series, label='Оригинальный ряд', color='blue', marker='o')
+    # Прогнозируемые значения
+    plt.plot(range(len(time_series), len(time_series) + forecast_steps), forecast, label='Прогноз', color='orange', marker='x')
 
-# Прогнозируемые значения
-plt.plot(range(len(time_series), len(time_series) + forecast_steps), forecast, label='Прогноз', color='orange', marker='x')
-
-plt.title('Прогнозирование временного ряда с помощью линейной регрессии')
-plt.xlabel('Время')
-plt.ylabel('Значение')
-plt.legend()
-plt.grid(True)
-plt.show()
+    plt.title('Прогнозирование временного ряда с помощью линейной регрессии')
+    plt.xlabel('Время')
+    plt.ylabel('Значение')
+    plt.legend()
+    plt.grid(True)
+    plt.show()

@@ -62,17 +62,14 @@ def plot_series_with_smoothing(original_series, smoothed_series):
     plt.show()
 
 
-# Пример использования:
-time_series = [100, 105, 110, 120, 115, 125, 130, 135]
-alpha = 0.5
+def test_ema(time_series, alpha):
+    # Сглаживание временного ряда
+    smoothed_series = exponential_smoothing(time_series, alpha)
+    print(f"Сглаженный временной ряд: {smoothed_series}")
 
-# Сглаживание временного ряда
-smoothed_series = exponential_smoothing(time_series, alpha)
-print(f"Сглаженный временной ряд: {smoothed_series}")
+    # Прогнозирование следующего значения
+    forecast = exponential_smoothing_forecast(time_series, alpha)
+    print(f"Прогноз на следующий период: {forecast}")
 
-# Прогнозирование следующего значения
-forecast = exponential_smoothing_forecast(time_series, alpha)
-print(f"Прогноз на следующий период: {forecast}")
-
-# Построение графика
-plot_series_with_smoothing(time_series, smoothed_series)
+    # Построение графика
+    plot_series_with_smoothing(time_series, smoothed_series)

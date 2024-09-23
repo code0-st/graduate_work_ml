@@ -62,17 +62,16 @@ def plot_time_series(original_series, smoothed_series, window_size):
     # Показ графика
     plt.show()
 
-# Пример использования:
-time_series = [100, 105, 110, 120, 115, 125, 130, 135]
-window_size = 2
 
-# Сглаживание временного ряда
-smoothed_series = smooth_time_series(time_series, window_size)
-print(f"Сглаженный временной ряд: {smoothed_series}")
+def test_sma(time_series, window_size):
+    # Сглаживание временного ряда
+    smoothed_series = smooth_time_series(time_series, window_size)
+    print(f"Сглаженный временной ряд: {smoothed_series}")
 
-# Прогнозирование следующего значения
-forecast = moving_average_forecast(time_series, window_size)
-print(f"Прогноз на следующий период: {forecast}")
+    # Прогнозирование следующего значения
+    forecast = moving_average_forecast(time_series, window_size)
+    print(f"Прогноз на следующий период: {forecast}")
 
-# Построение графика
-plot_time_series(time_series, smoothed_series, window_size)
+    # Построение графика
+    plot_time_series(time_series, smoothed_series, window_size)
+

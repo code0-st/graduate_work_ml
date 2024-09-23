@@ -5,6 +5,9 @@ from model import create_model, train_model, inference_model
 import pandas as pd
 from csv_utils import read_file, plot_data, get_column_values
 
+# methods
+from methods import ema, sma, holtwinters, lr, neuralnetwork
+
 app = Flask(__name__)
 
 # Cross Origin Resource Sharing (CORS) handling
@@ -30,21 +33,29 @@ def train_post_request():
 
 
 def main():
-    # Укажи путь к твоему CSV файлу
-    file_path = 'GC_240101_240920.csv'
-    
-    # Чтение файла с котировками
+    file_path = 'GC.csv'
     data = read_file(file_path)
-    
-    # Построение графика по ценам закрытия
-    plot_data(data, column='<CLOSE>')
-    
-    # Получение списка значений для столбца с ценами закрытия
+    # plot_data(data, column='<CLOSE>')
     close_prices = get_column_values(data, column='<CLOSE>')
+
+    predict_neuralnetwork(close_prices)
+
+
+def predict_sma(time_series):
+    sma.test_sma(time_series, 6)
+
+def predict_ema(time_series):
+    ema.test_ema(time_series, 0.7)
+
+def predict_holrwinters(time_series): 
+    holtwinters.test_holtwinters(time_series, 30)
+
+def predict_lr(time_series):
+    lr.test_lr(time_series, 15, 5)
+
+def predict_neuralnetwork(time_series):
+    neuralnetwork.test_neural_network(time_series, 15)
     
-    # Вывод первых 5 значений для проверки
-    if close_prices is not None:
-        print("Первые 5 значений закрытия цен:", close_prices[:5])
 
 if __name__ == "__main__":
     main()
