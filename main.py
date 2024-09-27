@@ -58,21 +58,26 @@ def proxy_method(time_series, payload):
         case EPredictMethod.arima.value:
             return None
 
-# def predict_sma(time_series):
-#     sma.test_sma(time_series, 6)
+def predict_sma(time_series):
+    sma.test_sma(time_series, 6)
 
-# def predict_ema(time_series):
-#     ema.test_ema(time_series, 0.7)
+def predict_ema(time_series):
+    ema.test_ema(time_series, 0.7)
 
-# def predict_holrwinters(time_series): 
-#     holtwinters.test_holtwinters(time_series, 30)
+def predict_holrwinters(time_series): 
+    holtwinters.test_holtwinters(time_series, 30)
 
-# def predict_lr(time_series):
-#     lr.test_lr(time_series, 15, 5)
+def predict_lr(time_series):
+    lr.test_lr(time_series, 15, 5)
 
-# def predict_neuralnetwork(time_series):
-#     neuralnetwork.test_neural_network(time_series, 15)
+def predict_neuralnetwork(time_series):
+    neuralnetwork.test_neural_network(time_series, 15)
     
+def main():
+    close_values = get_column_values(read_file('GC.csv'), column='<CLOSE>')
+    predict_sma(close_values)
+
 
 if __name__ == "__main__":
-    app.run(host='localhost', port=8080)
+    main()
+    # app.run(host='localhost', port=8080)
