@@ -7,6 +7,8 @@ from flask_cors import CORS
 from csv_utils import read_file, plot_data, get_column_values
 from methods import ema, sma, holtwinters, lr, neuralnetwork
 
+from test import test
+
 @enum.unique
 class EPredictMethod(enum.Enum):
     sma = 'SMA'
@@ -34,14 +36,16 @@ def train_post_request():
     # TODO: Подумать над общими данными в запросе 
     # Например, кол-во шагов для прогноза и тд
     # Также добавить больше конфигурационных параметров для отдельных методов
-    payload = json.loads(request.data)
-    close_values = get_column_values(read_file(payload['name']), column='<CLOSE>')
-    dates_values = get_column_values(read_file(payload['name']), column='<DATE>')
+
+    # payload = json.loads(request.data)
+    # close_values = get_column_values(read_file(payload['name']), column='<CLOSE>')
+    # dates_values = get_column_values(read_file(payload['name']), column='<DATE>')
     
+    res = test()
     # TODO: Нужно унифицировать ответ
     # test_result = proxy_method(close_prices, payload)
 
-    return jsonify({'status': 'OK', 'close_values': close_values.tolist(), 'dates_values': dates_values.tolist()})
+    return jsonify({'status': 'OK', 'result': res.toobj()})
 
 def proxy_method(time_series, payload):
     match payload['method']:
@@ -79,5 +83,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
-    # app.run(host='localhost', port=8080)
+    # main()
+    app.run(host='localhost', port=8080)
