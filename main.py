@@ -1,87 +1,108 @@
-import json
-import enum
+import os
 
-from flask import Flask, jsonify, request
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
+from werkzeug.utils import secure_filename
+import pandas as pd
 
-from csv_utils import read_file, plot_data, get_column_values
-from methods import ema, sma, holtwinters, lr, neuralnetwork
+from enums.forecast_methods import ForecastMethod
+from utils.file_utils import load_csv_data
 
-from test import test
+from methods.moving_average import moving_average_predict
+from methods.exponential_smoothing import exponential_smoothing_predict
+from methods.holt_winters import holt_winters_predict
+from methods.linear_regression import linear_regression_predict
+from methods.neural_network import neural_network_predict
+from methods.arima import arima_predict
+from methods.sarima import sarima_predict
 
-@enum.unique
-class EPredictMethod(enum.Enum):
-    sma = 'SMA'
-    ema = 'EMA'
-    holt_winters = 'HoltWinters'
-    linear_regression = 'LinearRegression'
-    neural_network = 'NeuralNetwork'
-    arima = 'ARIMA'
+UPLOAD_FOLDER = 'uploads'
+ALLOWED_EXTENSIONS = {'csv'}
 
 app = Flask(__name__)
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+CORS(app)
 
-# Cross Origin Resource Sharing (CORS) handling
-CORS(app, resources={'/files': {"origins": "http://localhost:3000"}})
-CORS(app, resources={'/train': {"origins": "http://localhost:3000"}})
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+# Загрузка файла
+@app.route('/upload', methods=['POST'])
+def upload_file():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file part'}), 400
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        return jsonify({'message': 'File uploaded successfully', 'filename': filename})
+    return jsonify({'error': 'Invalid file type'}), 400
+
+# Получение списка файлов
+@app.route('/files', methods=['GET'])
+def list_files():
+    files = os.listdir(app.config['UPLOAD_FOLDER'])
+    return jsonify({'files': files})
+
+# Получение содержимого файла
+@app.route('/file/<filename>', methods=['GET'])
+def get_file(filename):
+    try:
+        return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+    except FileNotFoundError:
+        return jsonify({'error': 'File not found'}), 404
+
+# Прогнозирование
+@app.route('/predict', methods=['POST'])
+def predict():
+    try:
+        json_data = request.get_json()
+        method = ForecastMethod(json_data["method"])
+        filename = json_data["filename"]
+        params = json_data.get("params", {})
+    except Exception as e:
+        return jsonify({"error": f"Ошибка валидации запроса: {str(e)}"}), 400
+
+    filepath = os.path.join(UPLOAD_FOLDER, filename)
+    if not os.path.exists(filepath):
+        return jsonify({"error": "Файл не найден"}), 404
+
+    try:
+        df = pd.read_csv(filepath, encoding='cp1251', sep=';')
+        df.columns = df.columns.str.strip()
+
+        if "<CLOSE>" not in df.columns:
+            return jsonify({"error": "В файле не найден столбец '<CLOSE>'"}), 400
+
+        series = df["<CLOSE>"].dropna().tolist()
+    except Exception as e:
+        return jsonify({"error": f"Ошибка чтения файла: {str(e)}"}), 500
+
+    try:
+        if method == ForecastMethod.SMA:
+            result = moving_average_predict(series, **params)
+        elif method == ForecastMethod.EMA:
+            result = exponential_smoothing_predict(series, **params)
+        elif method == ForecastMethod.HOLT_WINTERS:
+            result = holt_winters_predict(series, **params)
+        elif method == ForecastMethod.LINEAR_REGRESSION:
+            result = linear_regression_predict(series, **params)
+        elif method == ForecastMethod.NEURAL_NETWORK:
+            result = neural_network_predict(series, **params)
+        elif method == ForecastMethod.ARIMA:
+            result = arima_predict(series, **params)
+        elif method == ForecastMethod.SARIMA:
+            result = sarima_predict(series, **params)
+        else:
+            return jsonify({"error": "Метод не поддерживается"}), 400
+    except Exception as e:
+        return jsonify({"error": f"Ошибка выполнения метода: {str(e)}"}), 500
+
+    return jsonify(result)
 
 
-@app.route('/files', methods=['POST'])
-def file_post_request():
-    uploaded_file = request.files['data']
-    uploaded_file.save(uploaded_file.filename)
-    return jsonify({'success': True, 'name': uploaded_file.filename})
-
-@app.route('/train', methods=['POST'])
-def train_post_request():
-    # TODO: Подумать над общими данными в запросе 
-    # Например, кол-во шагов для прогноза и тд
-    # Также добавить больше конфигурационных параметров для отдельных методов
-
-    # payload = json.loads(request.data)
-    # close_values = get_column_values(read_file(payload['name']), column='<CLOSE>')
-    # dates_values = get_column_values(read_file(payload['name']), column='<DATE>')
-    
-    res = test()
-    # TODO: Нужно унифицировать ответ
-    # test_result = proxy_method(close_prices, payload)
-
-    return jsonify({'status': 'OK', 'result': res.toobj()})
-
-def proxy_method(time_series, payload):
-    match payload['method']:
-        case EPredictMethod.sma.value:
-            return sma.test_sma(time_series, payload['window_size'])
-        case EPredictMethod.ema.value:
-            return ema.test_ema(time_series, payload['alpha'])
-        case EPredictMethod.holt_winters.value:
-            return holtwinters.test_holtwinters(time_series, payload['seasonal_periods'])
-        case EPredictMethod.linear_regression.value:
-            return lr.test_lr(time_series, payload['window_size'], payload['steps'])
-        case EPredictMethod.neural_network.value:
-            return neuralnetwork.test_neural_network(time_series, payload['window_size'])
-        case EPredictMethod.arima.value:
-            return None
-
-def predict_sma(time_series):
-    sma.test_sma(time_series, 6)
-
-def predict_ema(time_series):
-    ema.test_ema(time_series, 0.7)
-
-def predict_holrwinters(time_series): 
-    holtwinters.test_holtwinters(time_series, 30)
-
-def predict_lr(time_series):
-    lr.test_lr(time_series, 15, 5)
-
-def predict_neuralnetwork(time_series):
-    neuralnetwork.test_neural_network(time_series, 15)
-    
-def main():
-    close_values = get_column_values(read_file('GC.csv'), column='<CLOSE>')
-    predict_sma(close_values)
-
-
-if __name__ == "__main__":
-    # main()
+if __name__ == '__main__':
     app.run(host='localhost', port=8080)
