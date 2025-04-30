@@ -6,7 +6,6 @@ from werkzeug.utils import secure_filename
 import pandas as pd
 
 from enums.forecast_methods import ForecastMethod
-from utils.file_utils import load_csv_data
 
 from methods.moving_average import moving_average_predict
 from methods.exponential_smoothing import exponential_smoothing_predict
